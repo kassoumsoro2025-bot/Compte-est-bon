@@ -70,6 +70,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .result h2{margin:0 0 6px;font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.7rem}
 .result p{margin:4px 0;line-height:1.5}
 .sol{font-variant-numeric:tabular-nums;color:var(--muted)}
+.credit{margin:2px 0 0;text-align:center;color:var(--muted);font-size:.85rem;letter-spacing:.3px}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:380px){.tile{font-size:1.5rem}.target{font-size:3.4rem;min-width:140px}}
@@ -99,8 +100,11 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
     <div class="seg" id="large">
       <button data-v="0">0</button><button data-v="1" class="on">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button>
     </div>
-    <div class="label">Temps</div>
-    <div class="seg two" id="time"><button data-v="30" class="on">30 s</button><button data-v="60">60 s</button></div>
+    <div class="label">Minuterie</div>
+    <div class="seg" id="time">
+      <button data-v="20">20 s</button><button data-v="30" class="on">30 s</button><button data-v="45">45 s</button><button data-v="60">60 s</button><button data-v="0">∞</button>
+    </div>
+    <div class="label" id="lvl">Expert · points ×1</div>
     <div class="actions"><button class="btn primary" id="start">Lancer</button></div>
   </div>
 
@@ -108,6 +112,8 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
     <button class="btn ghost" id="undo">Annuler</button>
     <button class="btn primary" id="submit">Valider</button>
   </div>
+
+  <p class="credit">Un jeu de Kassoum Soro</p>
 
   <div class="result" id="result">
     <h2 id="rTitle"></h2>
@@ -120,13 +126,17 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 <script>
 const $=id=>document.getElementById(id);
 const SYM={'+':'+','-':'−','*':'×','/':'÷'};
-let large=1,dur=30,total=0,target=0,tiles=[],steps=[],sel=null,op=null,timer=null,left=0,playing=false;
+let large=1,dur=30,up=0,total=0,target=0,tiles=[],steps=[],sel=null,op=null,timer=null,left=0,playing=false;
 try{total=+localStorage.getItem('ceb-total')||0}catch(e){}
 $('total').textContent=total;
 
 function seg(id,cb){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   [...$(id).children].forEach(x=>x.classList.toggle('on',x===b));cb(+b.dataset.v)})}
-seg('large',v=>large=v);seg('time',v=>dur=v);
+const LVL={20:['Éclair','×2'],30:['Expert','×1'],45:['Confirmé','×0,8'],60:['Tranquille','×0,6'],0:['Sans limite','×0,4']};
+const MULT={20:2,30:1,45:.8,60:.6,0:.4};
+seg('large',v=>large=v);
+seg('time',v=>{dur=v;$('lvl').textContent=LVL[v][0]+' · points '+LVL[v][1]});
+$('lvl').textContent=LVL[30][0]+' · points '+LVL[30][1];
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function deal(){
@@ -180,10 +190,12 @@ function start(){
   const spin=setInterval(()=>{$('target').textContent=101+(Math.random()*899|0);if(++n>18){clearInterval(spin);$('target').textContent=target;go()}},55);
 }
 function go(){
-  playing=true;left=dur;render();$('play').classList.remove('hidden');msg('Touche un nombre, un opérateur, puis un autre nombre.');
-  tick();timer=setInterval(()=>{left-=.1;tick();if(left<=0)finish()},100);
+  playing=true;left=dur||0;up=0;render();$('play').classList.remove('hidden');msg('Touche un nombre, un opérateur, puis un autre nombre.');
+  tick();timer=setInterval(()=>{if(dur){left-=.1;if(left<=0){tick();return finish()}}else up+=.1;tick()},100);
 }
-function tick(){const l=Math.max(0,left);$('sec').textContent=Math.ceil(l);
+function tick(){
+  if(!dur){$('sec').textContent=Math.floor(up);$('arc').style.strokeDashoffset=0;$('arc').style.stroke='#3F63D6';return}
+  const l=Math.max(0,left);$('sec').textContent=Math.ceil(l);
   $('arc').style.strokeDashoffset=175.9*(1-l/dur);$('arc').style.stroke=l<6?'var(--bad)':'var(--amber)'}
 
 function finish(){
@@ -191,11 +203,12 @@ function finish(){
   $('play').classList.add('hidden');
   const vals=tiles.filter(t=>!t.used).map(t=>t.v);
   const best=vals.reduce((b,v)=>Math.abs(v-target)<Math.abs(b-target)?v:b,vals[0]);
-  const d=Math.abs(best-target),pts=d===0?10:d<=5?7:d<=10?5:0;
+  const d=Math.abs(best-target),base=d===0?10:d<=5?7:d<=10?5:0,pts=Math.round(base*MULT[dur]);
   total+=pts;try{localStorage.setItem('ceb-total',total)}catch(e){}
   $('total').textContent=total;
   $('rTitle').textContent=d===0?'Le compte est bon !':pts?`À ${d} près`:'Trop loin';
-  $('rText').textContent=`Ton meilleur : ${best} · cible ${target} · +${pts} pts`;
+  const used=dur?`${(dur-Math.max(0,left)).toFixed(0)} s`:`${Math.floor(up)} s`;
+  $('rText').textContent=`Ton meilleur : ${best} · cible ${target} · ${used} · +${pts} pts (${LVL[dur][0]})`;
   $('rSol').textContent='Recherche de la solution…';
   $('result').classList.add('show');render();msg('');
   setTimeout(()=>{const s=solve(tiles.filter(t=>!t.made).map(t=>t.v),target);
