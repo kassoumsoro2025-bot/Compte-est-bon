@@ -118,6 +118,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
   </div>
 
   <div class="actions hidden" id="play">
+    <button class="btn ghost" id="reset">Tout effacer</button>
     <button class="btn ghost" id="undo">Annuler</button>
     <button class="btn primary" id="submit">Valider</button>
   </div>
@@ -199,8 +200,8 @@ function render(){
 }
 function pick(id){
   if(!playing)return;
-  if(sel===null||op===null){sel=(sel===id?null:id);if(sel===null)op=null;msg('');render();return}
-  if(id===sel)return;
+  if(id===sel){sel=null;op=null;msg('');render();return}
+  if(sel===null||op===null){sel=id;msg('');render();return}
   const A=tiles.find(t=>t.id===sel),B=tiles.find(t=>t.id===id);
   const r=apply(A.v,op,B.v);
   if(r===null){msg(op==='-'?'Le résultat doit être positif.':'La division doit tomber juste.',true);op=null;render();return}
@@ -211,9 +212,20 @@ function pick(id){
   if(r===target)finish();
 }
 $('ops').addEventListener('click',e=>{const b=e.target.closest('.op');if(!b||!playing)return;
-  if(sel===null){msg('Choisis d’abord un nombre.',true);return}op=b.dataset.op;msg('');render()});
-$('undo').onclick=()=>{const s=steps.pop();if(!s)return;tiles=tiles.filter(t=>t.id!==s.nid);
-  tiles.forEach(t=>{if(s.ids.includes(t.id))t.used=false});sel=null;op=null;render()};
+  if(op===b.dataset.op){op=null;render();return}
+  if(sel===null){msg('Choisis d’abord un nombre.',true);return}
+  op=b.dataset.op;msg('');render()});
+$('undo').onclick=()=>{
+  if(sel!==null||op!==null){sel=null;op=null;msg('Sélection annulée.');render();return}
+  const s=steps.pop();
+  if(!s){msg('Rien à annuler.',true);return}
+  tiles=tiles.filter(t=>t.id!==s.nid);
+  tiles.forEach(t=>{if(s.ids.includes(t.id))t.used=false});
+  msg('Dernier calcul annulé.');render()};
+$('reset').onclick=()=>{
+  if(!playing)return;
+  tiles=tiles.filter(t=>!t.made);tiles.forEach(t=>t.used=false);steps=[];sel=null;op=null;
+  msg('Calculs effacés.');render()};
 function msg(t,err){$('msg').textContent=t;$('msg').classList.toggle('err',!!err)}
 
 function start(){
