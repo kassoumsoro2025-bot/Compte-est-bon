@@ -71,6 +71,12 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .result p{margin:4px 0;line-height:1.5}
 .sol{font-variant-numeric:tabular-nums;color:var(--muted)}
 .credit{margin:2px 0 0;text-align:center;color:var(--muted);font-size:.85rem;letter-spacing:.3px}
+.rules{background:#0A1440;border-radius:14px;padding:16px 18px;line-height:1.55}
+.rules h2{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.35rem;margin:14px 0 4px;color:var(--amber)}
+.rules h2:first-child{margin-top:0}
+.rules p{margin:4px 0}
+.rules ul{margin:4px 0;padding-left:18px}
+.rules li{margin:3px 0}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:380px){.tile{font-size:1.5rem}.target{font-size:3.4rem;min-width:140px}}
@@ -105,13 +111,44 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
       <button data-v="20">20 s</button><button data-v="30" class="on">30 s</button><button data-v="45">45 s</button><button data-v="60">60 s</button><button data-v="0">∞</button>
     </div>
     <div class="label" id="lvl">Expert · points ×1</div>
-    <div class="actions"><button class="btn primary" id="start">Lancer</button></div>
+    <div class="actions">
+      <button class="btn ghost" id="help">Règles &amp; astuces</button>
+      <button class="btn primary" id="start">Lancer</button>
+    </div>
   </div>
 
   <div class="actions hidden" id="play">
     <button class="btn ghost" id="undo">Annuler</button>
     <button class="btn primary" id="submit">Valider</button>
   </div>
+
+  <section class="rules hidden" id="rules">
+    <h2>Le but</h2>
+    <p>Atteindre le nombre cible en combinant les six tuiles. Chaque tuile ne sert qu'une fois, mais chaque résultat obtenu devient une nouvelle tuile réutilisable.</p>
+    <h2>Les règles</h2>
+    <ul>
+      <li>Quatre opérations : +, −, ×, ÷.</li>
+      <li>Toute soustraction doit donner un résultat positif.</li>
+      <li>Toute division doit tomber juste, sans reste.</li>
+      <li>Tu n'es pas obligé d'utiliser les six tuiles.</li>
+      <li>La manche s'arrête quand le chrono tombe à zéro, quand tu touches la cible, ou quand tu appuies sur Valider.</li>
+    </ul>
+    <h2>Les points</h2>
+    <p>Cible exacte : 10 points. À 5 près : 7 points. À 10 près : 5 points. Au-delà : rien. Le total est ensuite multiplié selon la minuterie choisie, de ×2 en 20 s à ×0,4 en illimité.</p>
+    <h2>Les astuces</h2>
+    <ul>
+      <li>Pars du plus gros bloc. Avec un 100 et un 7, 100 × 7 = 700 te place souvent à quelques unités de la cible.</li>
+      <li>Vise d'abord un nombre proche, puis ajuste avec les petites tuiles restantes.</li>
+      <li>Décompose la cible : 653, c'est 6 centaines plus 53, donc un 6 × 100 puis un ajustement.</li>
+      <li>La division est ta meilleure amie quand la cible est basse : 75 × 8 = 600, ÷ 2 = 300.</li>
+      <li>Le facteur commun fait gagner du temps : pour 448, cherche 7 × 64 ou 8 × 56 plutôt que d'additionner au hasard.</li>
+      <li>Fabrique le multiplicateur qui te manque : 25 × (3 + 4) = 175 vaut mieux que d'attendre un 7 qui n'est pas sorti.</li>
+      <li>Une cible se rate souvent de 1 ou 2. Garde une petite tuile de côté pour cet ajustement final.</li>
+      <li>Quatre grands nombres rendent la manche plus difficile, pas plus facile. Un ou deux suffisent.</li>
+      <li>Un résultat approché rapporte des points : valide ton meilleur nombre plutôt que de finir à zéro.</li>
+    </ul>
+    <div class="actions"><button class="btn primary" id="closeRules">Fermer</button></div>
+  </section>
 
   <p class="credit">Un jeu de Kassoum Soro</p>
 
@@ -242,6 +279,8 @@ function solve(nums,T){
 }
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+$('help').onclick=()=>{$('rules').classList.remove('hidden');$('rules').scrollIntoView({behavior:'smooth'})};
+$('closeRules').onclick=()=>$('rules').classList.add('hidden');
 $('start').onclick=start;$('again').onclick=start;$('submit').onclick=finish;
 </script>
 </body>
